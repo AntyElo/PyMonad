@@ -1,9 +1,9 @@
 from base import Monad
 
 class List(Monad):
-	def __int__(s, *v):
+	def __init__(s, *v):
 		s.v=v
-	def __bind__(s, f, blind=False):
+	def bind(s, f, blind=False):
 		v = []
 		if blind: 
 			for w in s.v: v+=f().v
