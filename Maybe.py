@@ -1,4 +1,4 @@
-from base import Monad, Carring
+from .base import Monad, Carring
 
 class Maybe(Monad):
 

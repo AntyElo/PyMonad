@@ -1,4 +1,4 @@
-from base import Monad
+from .base import Monad
 
 class List(Monad):
 
