@@ -8,14 +8,11 @@ class List(Monad):
 	def bind(s, f, blind=False):
 		v = []
 		if blind:
-			for w in s.v: v += f().v
+			for e in s.v: v += f().v
 		else:
-			for w in s.v: v += f(w).v
+			for e in s.v: v += f(e).v
 		s.v = v
 		return s
 
 	def __repr__(s):
-		return f"{s.v}"
-
-	def __eq__(s, m):
-		return s.v==m.v
+		return f"List {s.v}"

@@ -1,16 +1,11 @@
-from .base import Monad, Carring
+from .base import Monad
 
 class Maybe(Monad):
 
 	def __init__(self, x, isnothing=False):
-		"Is `Just x` | `Nothing`"
+		"Is `Just x` | `Nothing`, defaults to Just"
 		self.n = True if isnothing else False
 		self.v = x
-
-	def pure(self, v):
-		"do `pure` or `Just`"
-		self.__init__(v, False)
-		return self
 
 	def bind(self, f, blind=False):
 		"`>>=` if not blind, else `>>`"
@@ -84,11 +79,9 @@ def divMaybeFixed(a, b):
 
 
 if __name__ == "__main__":
+	from .base import Carring
 
 	print(f'''\
-test Carring [13]:
-	{ Carring(lambda *x: sum(x), 3)(2)(3)(6)(2) }
-
 test "Just 5 >>= f 0 >>= \\x-> f x 2" [Nothing]:
 	{ Just(5)( Carring(divMaybe, 1)(0, i=True) )( Carring(divMaybe, 1)(2) ) }
 

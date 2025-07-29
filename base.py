@@ -1,8 +1,17 @@
+def dot(f, g):
+	return lambda *a, **kw: f(g(*a, **kw))
+
+def isMonad(m):
+	return(hasattr(m, "MONAD"))
+
+def isComonad(m):
+	return(hasattr(m, "COMONAD"))
+
 class Monad(object):
-	BINDABLE = True
+	MONAD = True
 
 	def __init__(self, v):
-		"`pure` -- identical monad"
+		"`pure` of Identical monad"
 		self.v = v
 
 	def pure(self, *a, **kw):
@@ -20,12 +29,36 @@ class Monad(object):
 		return self.bind(*a, **kw)
 
 	def __eq__(self, m):
-		if hasattr(m, "v"):
+		if isMonad(m):
 			return self.v==m.v
 		return False
 
-def isMonad(m):
-	return(hasattr(m, "BINDABLE"))
+
+class Comonad:
+	COMONAD = True
+
+	def __init__(s, v, f):
+		"constructor, uses `.v` for value and `.f` for function"
+		s.v = v
+		s.f = f
+
+	def duplicate(s):
+		f = lambda *a, **kw: s.f(*a, **kw)
+		s.f = f
+		return s
+
+	def extract(s):
+		return s.v
+
+	def extend(s, g):
+		"alias for `extend`"
+		"`extend` (alias)"
+		s.f = dot(g, s.f)
+		return s
+
+	def __call__(s, *a, **kw):
+		"alias for `extend`"
+		return extend(*a, **kw)
 
 
 class Carring(object):
@@ -68,3 +101,11 @@ def pure(v, example=None):
 	"return `v` to `example`'s monad context"
 	t = Monad if example==None else example.__class__
 	return t.pure(t(), v)
+
+
+if __name__ == "__main__":
+
+	print(f'''\
+test Carring [13]:
+	{ Carring(lambda *x: sum(x), 3)(2)(3)(6)(2) }
+''')
