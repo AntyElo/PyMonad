@@ -2,10 +2,17 @@ def dot(f, g):
 	return lambda *a, **kw: f(g(*a, **kw))
 
 def isMonad(m):
-	return(hasattr(m, "MONAD"))
+	return hasattr(m, "MONAD")
 
 def isComonad(m):
-	return(hasattr(m, "COMONAD"))
+	return hasattr(m, "COMONAD")
+
+def passM(attr, *a, **kw):
+	"modify attribute of inherit value and pass binding"
+	def wrapper(m):
+		getattr(m, attr)(*a, **kw)
+		return m
+	return wrapper
 
 class Monad(object):
 	MONAD = True
@@ -15,12 +22,12 @@ class Monad(object):
 		self.v = v
 
 	def pure(self, *a, **kw):
-		"do `pure`"
+		"Make `pure` great again."
 		self.__init__(*a, *kw)
 		return self
 
 	def bind(self, f):
-		"id's `>>=`. It just apply `f` to theirself value"
+		"id's `>>=`. It just apply `f` to inherit value"
 		self.v = f(self.v)
 		return self
 
