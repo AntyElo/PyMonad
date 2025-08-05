@@ -25,10 +25,3 @@ class Logger(Monad):
 def add5_wlog(v):
 	return Logger(v+5, f"Add 5 to {v}")
 
-
-if __name__ == "__main__":
-
-	print(f'''\
-Logger of 13 binded to add5: [18 + logs]:
-{ Logger(13)(add5_wlog) }
-''')

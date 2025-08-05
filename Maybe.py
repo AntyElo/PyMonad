@@ -77,17 +77,3 @@ def testMaybe():
 		"Example of funcion a -> a -> MaybeFixed b"
 		if not b: return Fixed(a)
 		return Just(a/b)
-
-	print(f'''\
-test "Just 5 >>= f  0 >>= \\x-> f  x 2": {
-	Just(5)( Carring(divMaybe, 1)(0, i=True) )( Carring(divMaybe, 1)(2) ) 
-} [Nothing]
-
-test "Just 5 >>= f' 0 >>= \\x-> f' x 2": {
-	Just(5)( Carring(divMaybeFixed, 1)(0, i=True) )( Carring(divMaybeFixed, 1)(2) ) 
-} [Fixed 5]
-
-test Pure: {
-	Maybe(1, False)(Pure(5), 1)( lambda x: Fixed(x-2) )( lambda x: Fixed(x-2) )
-} [Fixed 3]
-''')

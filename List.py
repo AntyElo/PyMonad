@@ -13,6 +13,3 @@ class List(Monad):
 			for e in s.v: v += f(e).v
 		s.v = v
 		return s
-
-	def __repr__(s):
-		return f"List {s.v}"

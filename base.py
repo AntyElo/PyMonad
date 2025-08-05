@@ -44,9 +44,9 @@ class Applicative(object):
 	def __eq__(fa, fb):
 		return False if not isinstance(fb, Applicative) else fa.v==fb.v
 
-def liftA(abc, *fs, **kw):
-	fl = [f.v for f in fs if isinstance(f, Applicative)]
-	return dot(Pure, abc)(*fl, **kw)
+def liftA(f, *a, **kw):
+	l = [e.v for e in a if isinstance(e, Applicative)]
+	return dot(Pure, f)(*l, **kw)
 
 
 class Pure(Applicative):
@@ -75,6 +75,7 @@ class Monad(Applicative):
 	def __call__(m, *a, **kw):
 		"alias for `bind`"
 		return m.bind(*a, **kw)
+
 
 class Comonad(Applicative):
 	NAME = "Comonad"
@@ -145,11 +146,3 @@ class LazyCarring(object):
 		return m
 	def run(s):
 		return s.f(*s.args, **s.kw)
-
-def testBase():
-	"Unit test"
-	print(f'''\
-test Carring: {
-	Carring(lambda *x: sum(x), 3)(2)(3)(6)(2) 
-}[13]
-''')
