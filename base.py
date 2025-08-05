@@ -1,11 +1,6 @@
-def dot(f, g):
-	return lambda *a, **kw: f(g(*a, **kw))
-
-def isMonad(m):
-	return hasattr(m, "MONAD")
-
-def isComonad(m):
-	return hasattr(m, "COMONAD")
+def dot(f, *g):
+	if g: return lambda *a, **kw: f(dot(g[0], *g[1:])(*a, **kw))
+	else: return lambda *a, **kw: f(*a, **kw)
 
 def passM(attr, *a, **kw):
 	"modify attribute of inherit value and pass binding"
@@ -14,62 +9,101 @@ def passM(attr, *a, **kw):
 		return m
 	return wrapper
 
-class Monad(object):
-	MONAD = True
+def idf(x):
+	"identity function"
+	return x
 
-	def __init__(self, v):
-		"`pure` of Identical monad"
-		self.v = v
+def notf(x):
+	return not x
 
-	def pure(self, *a, **kw):
-		"Make `pure` great again."
-		self.__init__(*a, *kw)
-		return self
+class Applicative(object):
+	NAME = "f"
 
-	def bind(self, f):
-		"id's `>>=`. It just apply `f` to inherit value"
-		self.v = f(self.v)
-		return self
+	def __init__(f, v):
+		f.v = v
 
-	def __call__(self, *a, **kw):
-		"alias for `bind`"
-		return self.bind(*a, **kw)
+	def fmap(fa, ab, *a, **kw):
+		"ab <$> fa"
+		fa.v = ab(fa.v, *a, **kw)
+		return fa
 
-	def __eq__(self, m):
-		if isMonad(m):
-			return self.v==m.v
-		return False
+	def __call__(f, *a, **kw):
+		"alias for fmap"
+		return f.fmap(*a, **kw)
+
+	def seqapple(fa, fab, *a, **kw):
+		"fab <*> fa"
+		fb = fab(fa.v, *a, **kw)
+		if isinstance(fb, Applicative):
+			fa.v == fb.v
+		return fa
+
+	def __repr__(f):
+		return f"{f.NAME} {f.v}"
+
+	def __eq__(fa, fb):
+		return False if not isinstance(fb, Applicative) else fa.v==fb.v
+
+def liftA(abc, *fs, **kw):
+	fl = [f.v for f in fs if isinstance(f, Applicative)]
+	return dot(Pure, abc)(*fl, **kw)
 
 
-class Comonad:
-	COMONAD = True
+class Pure(Applicative):
+	NAME = "Pure"
 
-	def __init__(s, v, f):
-		"constructor, uses `.v` for value and `.f` for function"
+	def __init__(s, v, *a, **kw):
 		s.v = v
-		s.f = f
+		s.a = a
+		s.kw = kw
 
-	def duplicate(s):
-		f = lambda *a, **kw: s.f(*a, **kw)
-		s.f = f
-		return s
+	def __eq__(pa, pb):
+		return False if not isinstance(pb, Pure) else dot(notf, list, filter)(lambda a: getattr(pa, a)!=getattr(pb, a), ["v", "a", "kw"])
 
-	def extract(s):
-		return s.v
 
-	def extend(s, g):
-		"alias for `extend`"
-		"`extend` (alias)"
-		s.f = dot(g, s.f)
-		return s
+class Monad(Applicative):
+	"Is Identical monad"
+	NAME = "Identical"
 
-	def __call__(s, *a, **kw):
+	def bind(ma, f):
+		"id's `>>=`. It just apply `f` to inherit value"
+		mb = f(ma.v)
+		if isinstance(mb, Applicative):
+			ma.v = m.v # Work fine both with Monad and Pure
+		return ma
+
+	def __call__(m, *a, **kw):
+		"alias for `bind`"
+		return m.bind(*a, **kw)
+
+class Comonad(Applicative):
+	NAME = "Comonad"
+	def __init__(w, v, f):
+		"constructor, uses `.v` for value and `.f` for function"
+		w.v = v
+		w.f = f
+
+	def duplicate(w):
+		f = lambda *a, **kw: w.f(*a, **kw)
+		w.f = f
+		return w
+
+	def extract(w):
+		return w.v
+
+	def extend(w, g):
+		w.f = dot(g, w.f)
+		return w
+
+	def __call__(w, *a, **kw):
 		"alias for `extend`"
 		return extend(*a, **kw)
 
+	def __eq__(wa, wb):
+		return False if (not hasattr(wb, "v") or not hasattr(wb, "f")) else (wa.v==wb.v)
+
 
 class Carring(object):
-
 	def __init__(s, f, hm=1):
 		s.f = f
 		s.hm = hm
@@ -88,31 +122,34 @@ class Carring(object):
 
 
 class LazyCarring(object):
-	def __init__(s, f, hm=1):
+	def __init__(s, f, **kw):
 		s.f = f
-		s.args = []
-		s.kw = {}
+		s.args = kw.get("args", [])
+		s.kw   = kw.get("kw",   {})
+		s.name = kw.get("name", "func")
 	def __call__(s, *args, **kw):
 		s.args += list(args)
 		s.kw.update(kw)
 		return s
-	def flip(s):
-		f, s, *t = s.args
-		s.args = [s, f, *t]
-		return s
+	def __repr__(s):
+		return f"{s.name}(*{s.args}, **{s.kw})"
+	def lflip(m):
+		if len(m.args) < 2: return m
+		f, s, *t = m.args
+		m.args = [s, f, *t]
+		return m
+	def rflip(m):
+		if len(m.args) < 2: return m
+		*t, s, f = m.args
+		m.args = [*t, f, s]
+		return m
 	def run(s):
 		return s.f(*s.args, **s.kw)
 
-
-def pure(v, example=None):
-	"return `v` to `example`'s monad context"
-	t = Monad if example==None else example.__class__
-	return t.pure(t(), v)
-
-
-if __name__ == "__main__":
-
+def testBase():
+	"Unit test"
 	print(f'''\
-test Carring [13]:
-	{ Carring(lambda *x: sum(x), 3)(2)(3)(6)(2) }
+test Carring: {
+	Carring(lambda *x: sum(x), 3)(2)(3)(6)(2) 
+}[13]
 ''')
